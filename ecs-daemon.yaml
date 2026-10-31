@@ -1,0 +1,132 @@
+# L'agent Map & Fix sur un cluster ECS à instances EC2 : un service en mode daemon, donc une
+# tâche par instance, y compris celles que la mise à l'échelle automatique ajoute ensuite.
+#
+# La tâche partage les processus et le réseau de l'instance et lit son système de fichiers sous
+# /host, en lecture seule ; elle ne garde que deux capacités (lire tout fichier, voir les
+# processus des autres comptes). Son identité tient dans /var/lib/mapandfix-agent de l'instance :
+# une tâche relancée retrouve la même machine. Elle n'a besoin d'aucun droit AWS : elle ne parle
+# qu'à Map & Fix. Le jeton d'inscription vient de Secrets Manager, jamais du modèle.
+#
+# Sans objet sur Fargate, qui n'ouvre pas l'instance : le scan AWS sans agent couvre ses images.
+#
+#   aws cloudformation deploy --template-file ecs-daemon.yaml --stack-name mapandfix-agent \
+#     --capabilities CAPABILITY_IAM --parameter-overrides ClusterName=… AgentImage=… \
+#     MapAndFixUrl=https://… EnrollTokenSecretArn=arn:aws:secretsmanager:…
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Agent Map & Fix, une tâche par instance du cluster ECS (service en mode daemon).
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Le cluster ECS (instances EC2) à suivre.
+  AgentImage:
+    Type: String
+    Description: L'image de l'agent, avec sa version (registre/mapandfix-agent:0.1.0).
+  MapAndFixUrl:
+    Type: String
+    Description: L'adresse de Map & Fix (https://…).
+    AllowedPattern: "^https://.+"
+  EnrollTokenSecretArn:
+    Type: String
+    Description: Le secret Secrets Manager qui contient le jeton d'inscription (mafe_…), en texte brut.
+    AllowedPattern: "^arn:aws[a-z-]*:secretsmanager:.+"
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /ecs/${AWS::StackName}
+      RetentionInDays: 14
+
+  # Le rôle d'exécution, celui d'ECS : tirer l'image, écrire les journaux, lire ce seul secret.
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: enroll-token
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  Ref: EnrollTokenSecretArn
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family:
+        Fn::Sub: ${AWS::StackName}
+      RequiresCompatibilities: [EC2]
+      NetworkMode: host
+      PidMode: host
+      ExecutionRoleArn:
+        Fn::GetAtt: [ExecutionRole, Arn]
+      Volumes:
+        - Name: host-root
+          Host:
+            SourcePath: /
+        - Name: state
+          Host:
+            SourcePath: /var/lib/mapandfix-agent
+      ContainerDefinitions:
+        - Name: mapandfix-agent
+          Image:
+            Ref: AgentImage
+          Essential: true
+          # Le battement de cœur ne coûte rien ; l'inventaire (Syft) monte à quelques centaines
+          # de mégaoctets le temps de lire les images.
+          Cpu: 128
+          MemoryReservation: 128
+          Memory: 1024
+          Environment:
+            - Name: MAPANDFIX_URL
+              Value:
+                Ref: MapAndFixUrl
+            - Name: MAPANDFIX_HOST_ROOT
+              Value: /host
+          Secrets:
+            - Name: MAPANDFIX_ENROLL_TOKEN
+              ValueFrom:
+                Ref: EnrollTokenSecretArn
+          MountPoints:
+            - SourceVolume: host-root
+              ContainerPath: /host
+              ReadOnly: true
+            - SourceVolume: state
+              ContainerPath: /var/lib/mapandfix-agent
+              ReadOnly: false
+          LinuxParameters:
+            Capabilities:
+              Drop: [ALL]
+              Add: [DAC_READ_SEARCH, SYS_PTRACE]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: agent
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName:
+        Fn::Sub: ${AWS::StackName}
+      Cluster:
+        Ref: ClusterName
+      LaunchType: EC2
+      SchedulingStrategy: DAEMON
+      TaskDefinition:
+        Ref: TaskDefinition

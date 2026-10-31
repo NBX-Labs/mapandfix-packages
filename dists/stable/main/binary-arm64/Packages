@@ -1,0 +1,17 @@
+Package: mapandfix-agent
+Architecture: arm64
+Version: 0.1.0
+Priority: optional
+Section: admin
+Maintainer: NBX Labs
+Installed-Size: 90754
+Filename: pool/mapandfix-agent_0.1.0_arm64.deb
+Size: 31244240
+MD5sum: d8b1b0842c1634e69450117c57877f3e
+SHA1: 580d29a82af05ee693a09f4484945150dc3b1240
+SHA256: 68fc1d520ac1161cf8a79ffad43b3d3bf5b4d18919a00ac618853503f2affc26
+SHA512: 4299f440f5991fa6d9eab2007f569294d47e183ad3c8985e5227d2bf4a1ca2650ab86605438ca46bc9854dd39d6a84db97e63c823f05c0673ac3003698006fd4
+Description: Agent résident de Map & Fix : il envoie le battement de cœur et l'inventaire de la machine
+ (processus, ports en écoute, conteneurs, logiciels relevés par Syft) en HTTPS sortant, sans
+ ouvrir de port ni exécuter quoi que ce soit à distance.
+

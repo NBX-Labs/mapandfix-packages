@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sécurité de l'agent Map &amp; Fix</title>
+<meta name="description" content="Ce que fait l'agent Map &amp; Fix, ce qu'il ne fait pas, et comment le vérifier soi-même.">
+<style>
+  :root { --bg:#fff; --fg:#0e1116; --soft:#4a5261; --line:#e4e7ec; --surface:#f5f8f9; --deep:#4c1d95; --light:#c4b5fd; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1116; --fg:#e6edf3; --soft:#a9b4c2; --line:#262d38; --surface:#161b22; --deep:#c4b5fd; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 20px 72px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  header svg { width: 40px; height: 40px; flex: none; }
+  header span { font-size: 20px; font-weight: 600; }
+  h1 { font-size: 34px; line-height: 1.2; margin: 0 0 12px; text-wrap: balance; }
+  h2 { font-size: 22px; line-height: 1.3; margin: 44px 0 12px; }
+  p { margin: 0 0 14px; color: var(--soft); }
+  p.lead { font-size: 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 18px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); }
+  th { color: var(--soft); font-weight: 600; }
+  ul { margin: 0 0 14px; padding-left: 20px; color: var(--soft); }
+  li { margin-bottom: 6px; }
+  code { font: 14px ui-monospace, Menlo, Consolas, monospace; }
+  pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; margin: 8px 0 18px; }
+  pre code { font-size: 13px; line-height: 1.6; }
+  .fingerprint { display: block; font: 15px ui-monospace, Menlo, Consolas, monospace; font-weight: 600; color: var(--deep); word-break: break-word; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; margin: 8px 0 18px; }
+  a { color: var(--deep); }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#4c1d95" d="M14 7h36a6 6 0 0 1 6 6v17c0 14.5-9.5 25.6-24 31C17.5 55.6 8 44.5 8 30V13a6 6 0 0 1 6-6z"/><path fill="#c4b5fd" d="M55.96 31.55C55.84 34.09 55.43 36.52 54.74 38.82L44 25.4 32 40.4 20 25.4 9.26 38.82C8.57 36.52 8.16 34.09 8.04 31.55L20 16.6 32 31.6 44 16.6z"/></svg>
+    <span>Map &amp; Fix</span>
+  </header>
+
+  <h1>Sécurité de l'agent</h1>
+  <p class="lead">Vous allez installer un programme sur vos machines. Cette page dit exactement ce qu'il fait, ce qu'il ne fait pas, et comment le vérifier vous-même, sans avoir à nous croire sur parole.</p>
+
+  <h2>En bref</h2>
+  <div class="wrap"><table>
+    <tr><th>Réseau</th><td>Connexions HTTPS sortantes vers votre console Map &amp; Fix, et rien d'autre. Il n'ouvre aucun port : rien ne peut le joindre depuis l'extérieur.</td></tr>
+    <tr><th>Commandes à distance</th><td>Aucune. La console peut seulement lui demander un nouvel inventaire. Il n'existe pas de canal pour lui faire exécuter une commande.</td></tr>
+    <tr><th>Mise à jour</th><td>Jamais automatique par Map &amp; Fix. Elle passe par votre gestionnaire de paquets (apt, dnf), à votre rythme. Une console compromise ne peut pas modifier un agent installé.</td></tr>
+    <tr><th>Droits</th><td>Service root réduit à deux capacités Linux (<code>CAP_DAC_READ_SEARCH</code>, <code>CAP_SYS_PTRACE</code>). Système en lecture seule, écriture limitée à son dossier d'état.</td></tr>
+    <tr><th>Signature</th><td>Paquets et dépôt signés par une clé qui ne quitte jamais le poste de publication : elle n'est ni sur nos serveurs, ni dans notre CI.</td></tr>
+    <tr><th>Charge</th><td>Priorité minimale sur le processeur et le disque, mémoire plafonnée à 1 Go.</td></tr>
+  </table></div>
+
+  <h2>Ce que l'agent peut techniquement faire</h2>
+  <p>Soyons clairs : l'agent tourne en root et sa capacité <code>CAP_DAC_READ_SEARCH</code> lui permet de lire tous les fichiers de la machine. Il en a besoin pour inventorier les logiciels installés et voir les processus de tous les comptes. Ce qu'il lit réellement, et ce qu'il envoie, est décrit ci-dessous. Vous pouvez le contrôler vous-même dans son journal et sur le réseau.</p>
+
+  <h2>Ce qu'il envoie</h2>
+  <div class="wrap"><table>
+    <tr><th>Quoi</th><th>Détail</th></tr>
+    <tr><td>La machine</td><td>Nom d'hôte, système, version du noyau, architecture, adresses IP publiques.</td></tr>
+    <tr><td>Les processus</td><td>Numéro, compte propriétaire, exécutable, ligne de commande avec les secrets masqués, fichiers chargés en mémoire (leur chemin).</td></tr>
+    <tr><td>Les ports en écoute</td><td>Protocole, adresse, port, processus.</td></tr>
+    <tr><td>Les conteneurs</td><td>Nom, image, état, ports publiés, projet Compose.</td></tr>
+    <tr><td>Les logiciels</td><td>Nom, version et emplacement des paquets, relevés par <a href="https://github.com/anchore/syft">Syft</a>, un outil open source lancé en local et vérifié par son empreinte.</td></tr>
+  </table></div>
+  <p>Un signal de vie part chaque minute, et un inventaire toutes les six heures, ou à la demande depuis la console.</p>
+
+  <h2>Ce qu'il n'envoie jamais</h2>
+  <ul>
+    <li>Le contenu de vos fichiers, de vos bases de données ou de vos journaux.</li>
+    <li>Les variables d'environnement des processus, où vivent souvent les secrets : il ne les lit pas.</li>
+    <li>Le trafic réseau : il ne l'écoute pas.</li>
+    <li>Les mots de passe et jetons passés en ligne de commande : ils sont masqués avant l'envoi. Ce masquage repose sur les noms d'options courants (<code>--password</code>, <code>--token</code>…) : une application qui passerait un secret sous un autre nom ne serait pas masquée. Mieux vaut ne jamais en passer par ligne de commande.</li>
+  </ul>
+
+  <h2>Installer en vérifiant tout</h2>
+  <p>La commande de la console est la plus simple. Elle embarque la clé publique ci-dessous, et apt ou dnf vérifient ensuite les signatures. Si vous préférez ne rien exécuter à l'aveugle, faites ces étapes à la main.</p>
+  <p>Empreinte de la clé de signature :</p>
+  <code class="fingerprint">0264 9E62 5DB6 F384 7296 E51C 1C36 08A7 FFF7 A718</code>
+  <p>Comparez-la à celle que nous vous transmettons par un autre canal, par exemple dans notre échange contractuel :</p>
+<pre><code>curl -fsSLO https://packages.mapandfix.com/mapandfix.asc
+gpg --show-keys --fingerprint mapandfix.asc</code></pre>
+  <p>Puis, sur Debian et Ubuntu :</p>
+<pre><code>sudo install -D -m 644 mapandfix.asc /etc/apt/keyrings/mapandfix.asc
+echo "deb [signed-by=/etc/apt/keyrings/mapandfix.asc] https://packages.mapandfix.com stable main" \
+  | sudo tee /etc/apt/sources.list.d/mapandfix.list
+sudo apt-get update
+sudo apt-get install mapandfix-agent
+sudo MAPANDFIX_URL=https://app.mapandfix.com MAPANDFIX_ENROLL_TOKEN=mafe_… mapandfix-agent enroll
+echo "MAPANDFIX_URL=https://app.mapandfix.com" | sudo tee /etc/mapandfix/agent.env
+sudo systemctl enable --now mapandfix-agent</code></pre>
+
+  <h2>Identité et jetons</h2>
+  <ul>
+    <li>Le jeton d'inscription ne sert qu'à l'installation et n'est écrit nulle part sur la machine. Il expire après 24 heures par défaut, peut servir à plusieurs machines pendant ce temps, et se révoque depuis la console. Il ne donne accès à aucune donnée : il permet seulement d'inscrire une machine.</li>
+    <li>À l'inscription, la machine reçoit sa propre identité, stockée en local et lisible de root seul. Côté Map &amp; Fix, secrets et identités ne sont conservés que hachés.</li>
+    <li>La commande d'installation contient le jeton : il peut rester dans l'historique de votre terminal. Son expiration couvre ce cas.</li>
+  </ul>
+
+  <h2>Retirer l'agent</h2>
+  <p>Depuis la console, le retrait coupe immédiatement son identité. Sur la machine :</p>
+<pre><code># Debian, Ubuntu
+sudo apt-get purge mapandfix-agent
+sudo rm -rf /var/lib/mapandfix-agent /etc/mapandfix /etc/apt/sources.list.d/mapandfix.list /etc/apt/keyrings/mapandfix.asc
+
+# RHEL, Amazon Linux
+sudo dnf remove mapandfix-agent
+sudo rm -rf /var/lib/mapandfix-agent /etc/mapandfix /etc/yum.repos.d/mapandfix.repo /etc/pki/rpm-gpg/RPM-GPG-KEY-mapandfix</code></pre>
+  <p>Rien d'autre ne reste sur la machine.</p>
+
+  <h2>Le vérifier vous-même</h2>
+<pre><code># Ses droits réels
+systemctl show mapandfix-agent -p CapabilityBoundingSet -p NoNewPrivileges -p ProtectSystem
+# Aucun port en écoute
+sudo ss -tlnp | grep mapandfix
+# Ses connexions sortantes
+sudo ss -tnp | grep mapandfix
+# Son activité
+journalctl -u mapandfix-agent</code></pre>
+
+  <h2>Une question, un doute ?</h2>
+  <p>Écrivez à <a href="mailto:support@nbx-labs.com">support@nbx-labs.com</a>. Une vulnérabilité dans l'agent nous intéresse en priorité.</p>
+</main>
+</body>
+</html>

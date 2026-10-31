@@ -1,0 +1,27 @@
+Architectures: amd64 arm64
+Codename: stable
+Components: main
+Date: Sat, 31 Oct 2026 14:20:33 +0000
+Label: Map & Fix
+Origin: Map & Fix
+Suite: stable
+MD5Sum:
+ 45baba288e6cf24fde4bcb838cea9f8e              758 main/binary-amd64/Packages
+ 2ae098dc6f5198ba822c4e7000467c47              548 main/binary-amd64/Packages.gz
+ 3072b34338758ff0dd30202f48f9479a              758 main/binary-arm64/Packages
+ ebb545ec4fcfb3f935cd6b2adc2012b3              552 main/binary-arm64/Packages.gz
+SHA1:
+ 950bc3b1080149a7547e7ed871523edf48039a7d              758 main/binary-amd64/Packages
+ 9b89f703a83065ad0fdb463fa5a512933a912c2f              548 main/binary-amd64/Packages.gz
+ bc94f39a6524c65768aa6c7a1950309a3f028527              758 main/binary-arm64/Packages
+ 8a0e6baf4e4a1e671d7ea81ebf38475f6901e778              552 main/binary-arm64/Packages.gz
+SHA256:
+ 107f4484942697c73df62a04ec462ac45de98c5df0f6bd072f239e0d42d5c8aa              758 main/binary-amd64/Packages
+ 5e4a2641e6b93e56ab6b15be31da6a2a77cfa1e58fc460dd46db8051608e6d35              548 main/binary-amd64/Packages.gz
+ 57d8eb38be19060db96033e207ed36ca0c4e57330c53952c36028bca14c2480e              758 main/binary-arm64/Packages
+ ebcfaf5e3ef5556643f568202ab07ba5b4fdbe5808238d3dc6ed28a3fadcfc03              552 main/binary-arm64/Packages.gz
+SHA512:
+ 459f8637bc61b286ed56677dc54985228653496e493a2cac524ed725ed7fa8ce6d34b5aad4ea12d6a06e0b1aff45a41c2b86ec9453397eaab4dbcc393c3f00cc              758 main/binary-amd64/Packages
+ 0b8fb0eb3a8e1e0bbf3e81fdfae564e2f257b2842c4f182420422369de357c69cfb36f6f257767fba1753def457b902c5df6f246da7dd373b3e051c760a45180              548 main/binary-amd64/Packages.gz
+ aef7e7c6a6628181982cad1fd4523252eb7127b99a6831298a8e349bc16be645b4f922bd5413c3832f26743b7b1b755a9c6445462646b522b989539bee88a805              758 main/binary-arm64/Packages
+ 55e3dac53ae686f555bb7bd880866382aa1bc82ad95ccab71be3753f009ae9b18ad446e25af13b03b3068ad0d8053b1825e6041c44dde119292f0b8d05880b0b              552 main/binary-arm64/Packages.gz
