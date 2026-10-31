@@ -51,8 +51,9 @@
     <tr><th>Charge</th><td>Priorité minimale sur le processeur et le disque, mémoire plafonnée à 1 Go.</td></tr>
   </table></div>
 
-  <h2>Ce que l'agent peut techniquement faire</h2>
-  <p>Soyons clairs : l'agent tourne en root et sa capacité <code>CAP_DAC_READ_SEARCH</code> lui permet de lire tous les fichiers de la machine. Il en a besoin pour inventorier les logiciels installés et voir les processus de tous les comptes. Ce qu'il lit réellement, et ce qu'il envoie, est décrit ci-dessous. Vous pouvez le contrôler vous-même dans son journal et sur le réseau.</p>
+  <h2>Pourquoi l'agent a besoin de ces droits</h2>
+  <p>Pour repérer vos failles, l'agent doit voir tout ce qui est installé et tout ce qui tourne sur la machine, quel que soit le compte propriétaire. Il démarre donc en root, comme beaucoup d'agents de supervision, mais réduit à deux capacités Linux : <code>CAP_DAC_READ_SEARCH</code>, qui lui donne accès en lecture à tous les fichiers, et <code>CAP_SYS_PTRACE</code>, qui lui permet d'identifier les processus.</p>
+  <p>Il ne s'en sert que pour cet inventaire. Il ignore les journaux et les fichiers temporaires du système (<code>/var/log</code>, <code>/tmp</code>) ainsi que les disques montés sous <code>/mnt</code> et <code>/media</code>, et il n'écrit que dans son propre dossier. Le détail de ce qui part vers Map &amp; Fix est ci-dessous : vous pouvez le contrôler vous-même dans son journal et sur le réseau.</p>
 
   <h2>Ce qu'il envoie</h2>
   <div class="wrap"><table>
