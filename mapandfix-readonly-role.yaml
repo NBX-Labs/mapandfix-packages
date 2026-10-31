@@ -1,0 +1,102 @@
+# Rôle en lecture seule que Map & Fix endosse pour cartographier un compte AWS : ce qui existe
+# (calcul, réseau, points d'entrée, données), qui peut joindre quoi depuis Internet, et les
+# failles des images qui tournent (lues dans ECR par Syft).
+#
+# Le client déploie ce modèle dans son compte, publié sur packages.mapandfix.com, avec la commande
+# que lui donne la console ; Map & Fix n'y détient aucune clé. Seule l'identité du scanner de
+# Map & Fix peut endosser le rôle, et seulement avec l'External ID propre à cette connexion
+# (protection contre le « confused deputy »). Chaque appel est visible dans CloudTrail sous le nom
+# du rôle ; supprimer la stack coupe l'accès.
+#
+# Les droits sont ceux de la politique gérée par AWS SecurityAudit, le standard des outils
+# d'audit : la configuration de presque tous les services, jamais leurs données. S'y ajoutent
+# la lecture des images ECR, et des interdictions explicites sur ce qui contient souvent des
+# secrets en clair (une interdiction l'emporte toujours sur une autorisation). Aucune écriture.
+#
+#   aws cloudformation deploy --stack-name mapandfix-readonly \
+#     --template-file mapandfix-readonly-role.yaml --capabilities CAPABILITY_NAMED_IAM \
+#     --parameter-overrides MapAndFixPrincipalArn=<ARN du scanner> ExternalId=<External ID>
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Map & Fix - read-only audit access (SecurityAudit) for cloud mapping, network exposure and image vulnerabilities
+
+Parameters:
+  MapAndFixPrincipalArn:
+    Type: String
+    Description: The Map & Fix scanner identity allowed to assume this role (given by Map & Fix), or an account root for a trial within your own account.
+    AllowedPattern: "^arn:aws:iam::[0-9]{12}:(root|(user|role)/[A-Za-z0-9+=,.@_/-]+)$"
+  ExternalId:
+    Type: String
+    Description: The External ID of this connection in Map & Fix (given by Map & Fix).
+    MinLength: 16
+    MaxLength: 128
+    NoEcho: true
+
+Resources:
+  MapAndFixReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MapAndFixReadOnly
+      Description: Read-only audit by Map & Fix (SecurityAudit + ECR image pull). Secret-bearing reads denied, no writes.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref MapAndFixPrincipalArn
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalId
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/SecurityAudit"
+      Policies:
+        - PolicyName: MapAndFixImages
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Lire les images des dépôts du compte, pour en inventorier les logiciels :
+              # SecurityAudit décrit les dépôts, mais ne permet pas d'en télécharger les couches.
+              - Sid: EcrToken
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: EcrImages
+                Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !Sub "arn:${AWS::Partition}:ecr:*:${AWS::AccountId}:repository/*"
+        - PolicyName: MapAndFixNoSecrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Ce que SecurityAudit permettrait de lire et qui contient souvent des mots de passe
+              # ou des clés en clair : variables d'environnement (tâches ECS, fonctions Lambda,
+              # projets CodeBuild, environnements Beanstalk), scripts de démarrage des machines
+              # (user data), modèles CloudFormation, connexions Glue, paramètres et secrets.
+              - Sid: DenySecretBearingReads
+                Effect: Deny
+                Action:
+                  - ecs:DescribeTaskDefinition
+                  - lambda:GetFunction
+                  - lambda:GetFunctionConfiguration
+                  - ec2:DescribeInstanceAttribute
+                  - ec2:DescribeLaunchTemplateVersions
+                  - autoscaling:DescribeLaunchConfigurations
+                  - cloudformation:GetTemplate
+                  - codebuild:BatchGetProjects
+                  - elasticbeanstalk:DescribeConfigurationSettings
+                  - glue:GetConnection
+                  - glue:GetConnections
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - ssm:GetParameterHistory
+                  - secretsmanager:GetSecretValue
+                Resource: "*"
+
+Outputs:
+  RoleArn:
+    Description: Give this ARN to Map & Fix.
+    Value: !GetAtt MapAndFixReadOnlyRole.Arn

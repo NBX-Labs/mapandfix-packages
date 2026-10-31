@@ -94,9 +94,17 @@ sudo systemctl enable --now mapandfix-agent</code></pre>
   <h2>Identité et jetons</h2>
   <ul>
     <li>Le jeton d'inscription ne sert qu'à l'installation et n'est écrit nulle part sur la machine. Il expire après 24 heures par défaut, peut servir à plusieurs machines pendant ce temps, et se révoque depuis la console. Il ne donne accès à aucune donnée : il permet seulement d'inscrire une machine.</li>
-    <li>À l'inscription, la machine reçoit sa propre identité, stockée en local et lisible de root seul. Côté Map &amp; Fix, secrets et identités ne sont conservés que hachés.</li>
+    <li>À l'inscription, la machine reçoit sa propre identité, stockée en local et lisible de root seul. Côté Map &amp; Fix, les jetons et les identités des agents ne sont conservés que hachés.</li>
     <li>La commande d'installation contient le jeton : il peut rester dans l'historique de votre terminal. Son expiration couvre ce cas.</li>
   </ul>
+
+  <h2>Vos comptes cloud</h2>
+  <p>Vous pouvez aussi connecter un compte OVHcloud ou AWS depuis la console. Map &amp; Fix le lit alors lui-même, chaque jour, pour savoir ce qui existe et ce qui est exposé à Internet. Cette lecture passe par l'API de votre fournisseur : elle n'installe rien et ne touche à aucune machine.</p>
+  <ul>
+    <li><strong>OVHcloud</strong> : vous confirmez sur la page d'OVHcloud une autorisation limitée à des lectures. Votre mot de passe reste chez OVHcloud, et une autorisation qui permettrait d'écrire est refusée. Map &amp; Fix la garde chiffrée en AES-256-GCM, avec une clé qui n'est pas dans sa base de données, et ne la déchiffre que le temps d'une lecture.</li>
+    <li><strong>AWS</strong> : vous créez dans votre compte un rôle en lecture seule, à partir de notre <a href="mapandfix-readonly-role.yaml">modèle public</a>. Seule l'identité de Map &amp; Fix peut l'endosser, avec un identifiant propre à cette connexion. Map &amp; Fix ne garde aucune clé de votre compte, et chaque appel apparaît dans votre CloudTrail. Les droits du rôle sont ceux du modèle : si vous en ajoutez, Map &amp; Fix ne les détecte pas et ne s'en sert pas.</li>
+  </ul>
+  <p>Ces accès sont parmi les données les plus sensibles que Map &amp; Fix détient : quelqu'un qui compromettrait nos serveurs pourrait lire la cartographie de vos comptes, sans pouvoir y modifier quoi que ce soit. Vous les retirez à tout moment : depuis la console, et de votre côté dans vos clés d'API OVHcloud ou en supprimant la stack <code>mapandfix-readonly</code>.</p>
 
   <h2>Retirer l'agent</h2>
   <p>Depuis la console, le retrait coupe immédiatement son identité. Sur la machine :</p>
