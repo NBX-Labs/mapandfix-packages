@@ -6,8 +6,8 @@
 <title>Sécurité de l'agent Map &amp; Fix</title>
 <meta name="description" content="Ce que fait l'agent Map &amp; Fix, ce qu'il ne fait pas, et comment le vérifier soi-même.">
 <style>
-  :root { --bg:#fff; --fg:#0e1116; --soft:#4a5261; --line:#e4e7ec; --surface:#f5f8f9; --deep:#4c1d95; --light:#c4b5fd; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0e1116; --fg:#e6edf3; --soft:#a9b4c2; --line:#262d38; --surface:#161b22; --deep:#c4b5fd; } }
+  :root { --bg:#fff; --fg:#0e1116; --soft:#4a5261; --line:#e4e7ec; --surface:#f5f8f9; --deep:#4c1d95; --light:#c4b5fd; --logo-map-from:#6d33c9; --logo-map-to:#3f1680; --logo-fix-from:#a78bfa; --logo-fix-to:#7c3aed; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1116; --fg:#e6edf3; --soft:#a9b4c2; --line:#262d38; --surface:#161b22; --deep:#c4b5fd; --logo-map-from:#dfd6ff; --logo-map-to:#a48ff5; --logo-fix-from:#fff; --logo-fix-to:#ece6ff; } }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
   main { max-width: 760px; margin: 0 auto; padding: 48px 20px 72px; }
@@ -34,7 +34,7 @@
 <body>
 <main>
   <header>
-    <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#4c1d95" d="M14 7h36a6 6 0 0 1 6 6v17c0 14.5-9.5 25.6-24 31C17.5 55.6 8 44.5 8 30V13a6 6 0 0 1 6-6z"/><path fill="#c4b5fd" d="M55.96 31.55C55.84 34.09 55.43 36.52 54.74 38.82L44 25.4 32 40.4 20 25.4 9.26 38.82C8.57 36.52 8.16 34.09 8.04 31.55L20 16.6 32 31.6 44 16.6z"/></svg>
+    <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="logo-map" gradientUnits="userSpaceOnUse" x1="14" y1="4" x2="50" y2="60"><stop stop-color="var(--logo-map-from)"/><stop offset="1" stop-color="var(--logo-map-to)"/></linearGradient><linearGradient id="logo-fix" gradientUnits="userSpaceOnUse" x1="34" y1="4" x2="56" y2="32"><stop stop-color="var(--logo-fix-from)"/><stop offset="1" stop-color="var(--logo-fix-to)"/></linearGradient></defs><path fill="url(#logo-map)" d="M28.35 5.67L11.7 15.28C9.02 16.83 7.37 19.68 7.37 22.78L7.37 41.22C7.37 44.32 9.02 47.17 11.7 48.72L27.67 57.94C30.35 59.49 33.65 59.49 36.33 57.94L52.3 48.72C54.98 47.17 56.63 44.32 56.63 41.22L56.63 22C56.63 20.38 55.77 19.89 54.38 20.7L47.29 24.79C45.9 25.59 45.04 27.07 45.04 28.69L45.04 36.13C45.04 38.24 43.92 40.18 42.1 41.23L34.94 45.36C33.12 46.41 30.88 46.41 29.06 45.36L21.9 41.23C20.08 40.18 18.96 38.24 18.96 36.13L18.96 27.87C18.96 25.76 20.08 23.82 21.9 22.77L28.35 19.05C29.74 18.24 30.6 16.76 30.6 15.15L30.6 6.97C30.6 5.36 29.74 4.86 28.35 5.67Z"/><path fill="url(#logo-fix)" d="M35.65 5.67L52.98 15.67C54.37 16.48 54.37 17.47 52.98 18.27L45.44 22.62C44.33 23.27 42.96 23.27 41.84 22.62L35.2 18.79C34.08 18.14 33.4 16.96 33.4 15.67L33.4 6.97C33.4 5.36 34.26 4.86 35.65 5.67Z"/><circle cx="32" cy="32" r="7" fill="url(#logo-map)"/></svg>
     <span>Map &amp; Fix</span>
   </header>
 
